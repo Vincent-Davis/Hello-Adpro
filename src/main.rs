@@ -21,4 +21,3 @@ fn handle_connection(mut stream: TcpStream) {
    {length}\r\n\r\n{contents}");
     stream.write_all(response.as_bytes()).unwrap();
 }
-

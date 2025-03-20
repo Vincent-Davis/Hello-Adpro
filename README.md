@@ -52,6 +52,6 @@ Pada commit ini, saya menambahkan kemampuan untuk mengembalikan halaman HTML seh
    - Meskipun masih sederhana, implementasi ini merupakan fondasi yang kuat untuk pengembangan server yang lebih kompleks. Langkah selanjutnya adalah menangani berbagai jenis permintaan dan mengirimkan respon yang sesuai.
    - Hal ini juga menekankan pentingnya pemisahan antara logika pemrosesan permintaan dan penyajian konten, yang merupakan prinsip dasar dalam pengembangan web.
 
-![Commit 2 screen capture](/assets/images/commit2.png)
+![commit 2 Response Screenshot](/assets/milestone%202.PNG)
+<!-- ![Server Response Screenshot](assets\milestone 2.PNG) -->
 
-Commit message yang digunakan: “(2) Returning HTML”
