@@ -27,3 +27,31 @@ Pada commit ini, saya telah menambahkan fitur untuk menangani koneksi dari brows
    - Memperdalam pemahaman terkait protokol HTTP dan bagaimana server dapat merespon dengan berbagai status code dan konten yang sesuai.
 
 Commit message yang digunakan: “(1) Handle-connection, check response”
+
+# Commit 2 Reflection Notes
+
+Pada commit ini, saya menambahkan kemampuan untuk mengembalikan halaman HTML sehingga browser dapat menampilkan konten. Berikut adalah beberapa poin refleksi mengenai perubahan yang dilakukan:
+
+1. **Membaca File HTML**  
+   - Saya menggunakan fungsi `fs::read_to_string("hello.html")` untuk membaca isi file HTML. Dengan cara ini, saya dapat dengan mudah memuat konten HTML yang ingin ditampilkan di browser.
+   - Pendekatan ini membuat pemisahan antara logika server dan konten statis, sehingga jika ingin mengubah tampilan, cukup melakukan perubahan pada file `hello.html`.
+
+2. **Menyusun HTTP Response**  
+   - Saya membuat string response yang mencakup status line `"HTTP/1.1 200 OK"`, header `Content-Length` (yang berfungsi memberi tahu browser panjang konten yang dikirim), dan konten HTML itu sendiri.
+   - Format response mengikuti protokol HTTP dengan menyertakan `\r\n` sebagai pemisah antara header dan body. Hal ini penting agar browser dapat mengenali batas antara header dan konten.
+
+3. **Pengiriman Data ke Browser**  
+   - Setelah string response selesai disusun, data dikirim ke browser menggunakan `stream.write_all(response.as_bytes())`.
+   - Dengan cara ini, ketika browser melakukan request, ia akan menerima respons yang lengkap dan dapat menampilkan halaman HTML dengan benar.
+
+4. **Pembelajaran Protokol HTTP**  
+   - Proses ini membantu saya memahami lebih dalam tentang bagaimana komunikasi antara browser dan server terjadi melalui protokol HTTP.
+   - Saya belajar tentang peran header seperti `Content-Length` dalam memastikan bahwa browser tahu seberapa banyak data yang akan diterima sehingga dapat memproses konten dengan benar.
+
+5. **Implementasi Sederhana yang Efektif**  
+   - Meskipun masih sederhana, implementasi ini merupakan fondasi yang kuat untuk pengembangan server yang lebih kompleks. Langkah selanjutnya adalah menangani berbagai jenis permintaan dan mengirimkan respon yang sesuai.
+   - Hal ini juga menekankan pentingnya pemisahan antara logika pemrosesan permintaan dan penyajian konten, yang merupakan prinsip dasar dalam pengembangan web.
+
+![Commit 2 screen capture](/assets/images/commit2.png)
+
+Commit message yang digunakan: “(2) Returning HTML”
