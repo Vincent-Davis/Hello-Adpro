@@ -55,3 +55,59 @@ Pada commit ini, saya menambahkan kemampuan untuk mengembalikan halaman HTML seh
 ![commit 2 Response Screenshot](/assets/milestone%202.PNG)
 <!-- ![Server Response Screenshot](assets\milestone 2.PNG) -->
 
+# Commit 3 Reflection Notes
+
+## Validating Request and Selectively Responding
+
+Pada milestone ketiga ini, saya telah mengimplementasikan fitur validasi request dan memberikan respons yang sesuai berdasarkan path yang diminta. Berikut adalah refleksi dari proses pengembangan ini:
+
+### 1. Proses Validasi Request
+
+Dalam implementasi sebelumnya, server akan selalu mengembalikan file `hello.html` tanpa memperhatikan path yang diminta oleh klien. Sekarang, server melakukan validasi terhadap request line untuk menentukan respons yang sesuai:
+
+```rust
+let request_line = buf_reader.lines().next().unwrap().unwrap();
+
+let (status_line, filename) = match &request_line[..] {
+    "GET / HTTP/1.1" => ("HTTP/1.1 200 OK", "hello.html"),
+    _ => ("HTTP/1.1 404 NOT FOUND", "404.html"),
+};
+```
+
+Kode di atas memeriksa request line pertama dari HTTP request. Jika request tersebut adalah "GET / HTTP/1.1" (mengakses root path), maka server akan mengirimkan respons 200 OK dengan konten dari file `hello.html`. Namun, jika request line tidak cocok dengan pola tersebut (misalnya saat mengakses URL `/bad`), server akan mengirimkan respons 404 NOT FOUND dengan konten dari file `404.html`.
+
+### 2. Pemisahan Respons dan Kebutuhan Refactoring
+
+Refactoring kode diperlukan untuk memperbaiki struktur dan meningkatkan maintainability. Dalam implementasi sebelumnya, kode untuk menyiapkan dan mengirim respons HTTP terkumpul dalam satu blok. Dengan pemisahan respons, kita dapat:
+
+1. **Meningkatkan Keterbacaan**: Dengan memisahkan logika untuk menentukan status dan file yang akan digunakan, kode menjadi lebih mudah dibaca dan dipahami.
+
+2. **Fleksibilitas**: Pemisahan ini memungkinkan kita untuk dengan mudah menambahkan lebih banyak jenis respons di masa depan (misalnya 500 Internal Server Error, 301 Moved Permanently, dll).
+
+3. **Single Responsibility Principle**: Setiap bagian kode memiliki tanggung jawab yang jelas - satu bagian menentukan jenis respons, bagian lain membaca file, dan bagian terakhir mengirimkan respons.
+
+Perhatikan penggunaan `match` statement yang lebih ekspresif dan idiomatik dalam Rust dibandingkan dengan rangkaian if-else:
+
+```rust
+let (status_line, filename) = match &request_line[..] {
+    "GET / HTTP/1.1" => ("HTTP/1.1 200 OK", "hello.html"),
+    _ => ("HTTP/1.1 404 NOT FOUND", "404.html"),
+};
+```
+
+Pattern matching ini memungkinkan kita untuk dengan mudah memperluas fitur server untuk menangani berbagai jenis request di masa depan.
+
+### 3. Hasil Pengujian
+
+Setelah implementasi, server berhasil memberikan respons yang berbeda berdasarkan path yang diakses:
+
+- Mengakses `http://127.0.0.1:7878/` menampilkan halaman selamat datang (hello.html)
+- Mengakses `http://127.0.0.1:7878/bad` atau path lain yang tidak terdaftar menampilkan halaman 404 error (404.html)
+
+![Server Response Screenshot](assets/milestone%203.PNG)
+### 4. Kesimpulan
+
+Implementasi validasi request dan respons selektif ini adalah langkah penting dalam pengembangan web server yang fungsional. Meskipun masih sederhana (hanya membedakan antara root path dan path lainnya), implementasi ini memberikan fondasi bagi fitur routing yang lebih kompleks di masa depan.
+
+Refactoring yang dilakukan juga sangat penting untuk memastikan kode tetap maintainable seiring dengan bertambahnya kompleksitas. Dengan struktur kode yang bersih dan terorganisir, penambahan fitur baru akan lebih mudah dilakukan.
+
