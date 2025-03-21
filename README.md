@@ -111,3 +111,66 @@ Implementasi validasi request dan respons selektif ini adalah langkah penting da
 
 Refactoring yang dilakukan juga sangat penting untuk memastikan kode tetap maintainable seiring dengan bertambahnya kompleksitas. Dengan struktur kode yang bersih dan terorganisir, penambahan fitur baru akan lebih mudah dilakukan.
 
+
+# Commit 4 Reflection Notes
+
+## Simulation of Slow Requests
+
+Pada commit ini, saya telah menambahkan simulasi untuk mendemonstrasikan keterbatasan server single-threaded ketika menghadapi permintaan yang membutuhkan waktu lama untuk diproses. Berikut adalah refleksi dari pengalaman ini:
+
+### 1. Implementasi Endpoint yang Lambat
+
+Saya menambahkan endpoint baru `/sleep` yang secara sengaja menunda respons selama 10 detik menggunakan `thread::sleep(Duration::from_secs(10))`:
+
+```rust
+let (status_line, filename) = match &request_line[..] {
+    "GET / HTTP/1.1" => ("HTTP/1.1 200 OK", "hello.html"),
+    "GET /sleep HTTP/1.1" => {
+        thread::sleep(Duration::from_secs(10));
+        ("HTTP/1.1 200 OK", "hello.html")
+    }
+    _ => ("HTTP/1.1 404 NOT FOUND", "404.html"),
+};
+```
+
+Endpoint ini mensimulasikan operasi yang membutuhkan waktu lama seperti query database yang kompleks, komputasi yang berat, atau request ke layanan eksternal yang lambat.
+
+### 2. Dampak pada Performa Server
+
+Setelah melakukan pengujian dengan membuka dua jendela browser secara bersamaan, saya mengamati beberapa hal penting:
+
+- **Blocking Behavior**: Ketika saya mengakses `127.0.0.1:7878/sleep` di satu jendela, kemudian mencoba mengakses `127.0.0.1:7878` di jendela lain, permintaan kedua harus menunggu hingga permintaan pertama selesai diproses (sekitar 10 detik).
+  
+- **Antrian Permintaan**: Server memproses permintaan secara sekuensial, sehingga semua permintaan setelah permintaan yang lambat akan mengalami penundaan, bahkan jika permintaan tersebut sangat sederhana dan seharusnya bisa diproses dengan cepat.
+
+- **Pengalaman Pengguna yang Buruk**: Dalam skenario dunia nyata, pengguna yang mengakses endpoint cepat akan merasakan keterlambatan yang signifikan jika ada pengguna lain yang secara bersamaan mengakses endpoint lambat.
+
+### 3. Akar Masalah: Single-Threaded Server
+
+Masalah ini muncul karena implementasi server saat ini menggunakan pendekatan single-threaded:
+
+```rust
+for stream in listener.incoming() {
+    let stream = stream.unwrap();
+    handle_connection(stream);
+}
+```
+
+Dalam model ini:
+- Server hanya dapat menangani satu permintaan pada satu waktu
+- Permintaan diproses secara sekuensial (satu setelah yang lain)
+- Permintaan yang membutuhkan waktu lama akan memblokir semua permintaan berikutnya
+
+### 4. Implikasi untuk Pengembangan Selanjutnya
+
+Simulasi ini dengan jelas menunjukkan kebutuhan untuk solusi yang lebih baik untuk menangani beberapa koneksi secara bersamaan. Beberapa pendekatan yang dapat dipertimbangkan:
+
+- **Multi-threading**: Membuat thread baru untuk setiap koneksi sehingga permintaan dapat diproses secara paralel
+- **Thread Pool**: Membuat kumpulan thread yang dapat digunakan kembali untuk menangani permintaan, menghindari overhead pembuatan thread untuk setiap koneksi
+- **Asynchronous I/O**: Menggunakan pendekatan non-blocking dengan async/await untuk menangani banyak koneksi secara efisien
+
+### 5. Kesimpulan
+
+Eksperimen ini memberikan pemahaman yang jelas tentang keterbatasan model single-threaded dalam pengembangan server web. Meskipun implementasi ini sederhana dan mudah dipahami, ia tidak cocok untuk lingkungan produksi di mana server harus menangani banyak permintaan secara bersamaan dan beberapa di antaranya mungkin membutuhkan waktu lama untuk diproses.
+
+Pengalaman ini memperkuat pentingnya concurrency dalam desain server web dan menyiapkan dasar untuk milestone berikutnya di mana kita akan mengimplementasikan model multi-threaded atau thread pool untuk meningkatkan performa dan responsivitas server.
