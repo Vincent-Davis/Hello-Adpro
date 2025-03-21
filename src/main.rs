@@ -2,16 +2,24 @@ use std::{
     fs,
     io::{prelude::*, BufReader},
     net::{TcpListener, TcpStream},
-    thread, 
+    thread,
     time::Duration,
 };
 
+mod threadpool;
+use threadpool::ThreadPool;
+
 fn main() {
     let listener = TcpListener::bind("127.0.0.1:7878").unwrap();
+    // Inisialisasi thread pool dengan 4 thread.
+    let pool = ThreadPool::new(4);
     
     for stream in listener.incoming() {
         let stream = stream.unwrap();
-        handle_connection(stream);
+        // Masing-masing koneksi diproses secara paralel melalui thread pool.
+        pool.execute(|| {
+            handle_connection(stream);
+        });
     }
 }
 
@@ -21,12 +29,12 @@ fn handle_connection(mut stream: TcpStream) {
     
     let (status_line, filename) = match &request_line[..] {
         "GET / HTTP/1.1" => ("HTTP/1.1 200 OK", "hello.html"),
-         "GET /sleep HTTP/1.1" => {
+        "GET /sleep HTTP/1.1" => {
             thread::sleep(Duration::from_secs(10)); 
-            ("HTTP/1.1 200 OK", "hello.html") 
+            ("HTTP/1.1 200 OK", "hello.html")
         }
         _ => ("HTTP/1.1 404 NOT FOUND", "404.html"),
-        };
+    };
     
     let contents = fs::read_to_string(filename).unwrap();
     let length = contents.len();

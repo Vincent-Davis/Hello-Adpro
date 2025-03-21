@@ -174,3 +174,19 @@ Simulasi ini dengan jelas menunjukkan kebutuhan untuk solusi yang lebih baik unt
 Eksperimen ini memberikan pemahaman yang jelas tentang keterbatasan model single-threaded dalam pengembangan server web. Meskipun implementasi ini sederhana dan mudah dipahami, ia tidak cocok untuk lingkungan produksi di mana server harus menangani banyak permintaan secara bersamaan dan beberapa di antaranya mungkin membutuhkan waktu lama untuk diproses.
 
 Pengalaman ini memperkuat pentingnya concurrency dalam desain server web dan menyiapkan dasar untuk milestone berikutnya di mana kita akan mengimplementasikan model multi-threaded atau thread pool untuk meningkatkan performa dan responsivitas server.
+
+# Commit 5 Reflection Notes
+
+Pada commit ini, saya mengimplementasikan server multithreaded dengan menggunakan thread pool sesuai dengan referensi [Turning Our Single-Threaded Server into a Multithreaded Server](https://rust-book.cs.brown.edu/ch21-02-multithreaded.html#turning-our-single-threaded-server-into-a-multithreaded-server). Berikut poin-poin utama dari implementasi ini:
+
+1. **Peningkatan Responsivitas Server**
+   - Dengan penggunaan thread pool, server kini dapat menangani beberapa koneksi secara paralel. Misalnya, koneksi yang menuju endpoint `/sleep` tidak akan memblokir request lain.
+   - Server lebih responsif, dan pengalaman pengguna meningkat karena koneksi tidak terblokir meskipun ada request yang lambat.
+
+2. **Implementasi Thread Pool**
+   - Saya membuat thread pool dengan jumlah thread tetap (misalnya 4 thread) sehingga setiap koneksi masuk dialokasikan ke salah satu thread pool.
+   - Pendekatan ini mengurangi overhead yang timbul dari pembuatan thread baru untuk setiap koneksi dan lebih efisien dalam penggunaan resource.
+
+3. **Pembelajaran Mengenai Concurrency**
+   - Implementasi ini memberikan pemahaman mendalam mengenai konsep concurrency dan bagaimana Rust mengelola thread melalui mekanisme ownership dan message passing.
+   - Mengikuti contoh di referensi, saya belajar cara mengintegrasikan channel (`mpsc`) dan mutex untuk sinkronisasi antar thread.
