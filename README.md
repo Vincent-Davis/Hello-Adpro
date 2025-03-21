@@ -190,3 +190,19 @@ Pada commit ini, saya mengimplementasikan server multithreaded dengan menggunaka
 3. **Pembelajaran Mengenai Concurrency**
    - Implementasi ini memberikan pemahaman mendalam mengenai konsep concurrency dan bagaimana Rust mengelola thread melalui mekanisme ownership dan message passing.
    - Mengikuti contoh di referensi, saya belajar cara mengintegrasikan channel (`mpsc`) dan mutex untuk sinkronisasi antar thread.
+
+# Commit Bonus Reflection Notes
+
+Pada commit bonus ini, saya menambahkan fungsi `build` pada modul thread pool sebagai alternatif dari fungsi `new`. Peningkatan ini memiliki beberapa tujuan utama:
+
+1. **Validasi Parameter Ukuran Thread Pool**
+   - Fungsi `build` memastikan bahwa nilai ukuran thread pool harus lebih dari 0. Jika tidak, fungsi ini mengembalikan error dengan pesan yang menjelaskan bahwa thread count harus merupakan bilangan positif non-nol.
+   - Hal ini meningkatkan keamanan dan robustitas aplikasi, karena mencegah pembuatan thread pool dengan parameter yang tidak valid.
+
+2. **Penggunaan Error Handling**
+   - Dengan mengembalikan `Result<ThreadPool, PoolCreationError>`, kita dapat menangani kemungkinan error secara lebih eksplisit dan mencegah crash secara tidak terduga.
+   - Tipe error `PoolCreationError` telah diimplementasikan untuk mendukung trait `Display` dan `Debug`, sehingga memudahkan dalam proses debugging serta pelaporan error.
+
+3. **Pemisahan Fungsi Pembuatan**
+   - Fungsi `new` tetap ada sebagai alternatif yang tidak melakukan validasi, namun fungsi `build` memberikan lapisan proteksi ekstra.
+   - Pendekatan ini memungkinkan fleksibilitas dalam pembuatan thread pool, sekaligus memberikan panduan kepada developer untuk menggunakan metode yang lebih aman.

@@ -1,6 +1,7 @@
 use std::{
+    fmt,
     sync::{mpsc, Arc, Mutex},
-    thread,
+    thread::{self, JoinHandle},
 };
 
 pub struct ThreadPool {
@@ -10,23 +11,59 @@ pub struct ThreadPool {
 
 type Job = Box<dyn FnOnce() + Send + 'static>;
 
+pub struct PoolCreationError {
+    reason: String,
+}
+
+impl fmt::Display for PoolCreationError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Unable to create ThreadPool: {}", self.reason)
+    }
+}
+
+impl fmt::Debug for PoolCreationError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{{ file: {}, line: {} }}", file!(), line!())
+    }
+}
+
 impl ThreadPool {
-    /// Membuat thread pool baru dengan jumlah thread tertentu.
-    /// Panjang thread pool harus lebih dari 0.
+    /// Fungsi build dengan validasi ukuran thread pool.
+    pub fn build(size: usize) -> Result<ThreadPool, PoolCreationError> {
+        if size <= 0 {
+            Err(PoolCreationError {
+                reason: "Thread count must be a positive nonzero integer".to_string(),
+            })
+        } else {
+            let (sender, receiver) = mpsc::channel();
+            let receiver = Arc::new(Mutex::new(receiver));
+
+            let mut workers = Vec::with_capacity(size);
+
+            for id in 0..size {
+                workers.push(Worker::new(id, Arc::clone(&receiver)));
+            }
+
+            Ok(ThreadPool { workers, sender })
+        }
+    }
+
+    /// Fungsi new sebagai alternatif (tanpa validasi)
     pub fn new(size: usize) -> ThreadPool {
-        assert!(size > 0, "Ukuran thread pool harus lebih dari 0");
+        assert!(size > 0);
 
         let (sender, receiver) = mpsc::channel();
         let receiver = Arc::new(Mutex::new(receiver));
-        
+
         let mut workers = Vec::with_capacity(size);
+
         for id in 0..size {
             workers.push(Worker::new(id, Arc::clone(&receiver)));
         }
-        
+
         ThreadPool { workers, sender }
     }
-    
+
     pub fn execute<F>(&self, f: F)
     where
         F: FnOnce() + Send + 'static,
@@ -38,28 +75,17 @@ impl ThreadPool {
 
 struct Worker {
     id: usize,
-    thread: Option<thread::JoinHandle<()>>,
+    thread: JoinHandle<()>,
 }
 
 impl Worker {
     fn new(id: usize, receiver: Arc<Mutex<mpsc::Receiver<Job>>>) -> Worker {
         let thread = thread::spawn(move || loop {
-            let message = receiver.lock().unwrap().recv();
-            match message {
-                Ok(job) => {
-                    // println!("Worker {} got a job; executing.", id);
-                    job();
-                }
-                Err(_) => {
-                    // println!("Worker {} disconnected; shutting down.", id);
-                    break;
-                }
-            }
+            let job = receiver.lock().unwrap().recv().unwrap();
+            println!("Worker {id} got a job; executing.");
+            job();
         });
-        
-        Worker {
-            id,
-            thread: Some(thread),
-        }
+
+        Worker { id, thread }
     }
 }
